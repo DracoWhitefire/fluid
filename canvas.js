@@ -17,7 +17,7 @@ class Cell {
     this.advect();
     this.diffuse();
     this.randomChange();
-    this.dissipation();
+    this.dissipate();
   }
 
   diffuse() {
@@ -85,6 +85,8 @@ class Cell {
     const targetCell = this.grid.getCellForCoordinates(targetX, targetY);
     if (targetCell) {
       this.density = (this.density + targetCell.density) / 2;
+      this.velocityVector.x = (targetCell.velocityVector.x + this.velocityVector.x) / 2;
+      this.velocityVector.y = (targetCell.velocityVector.y + this.velocityVector.y) / 2;
     }
 
   }
@@ -99,7 +101,7 @@ class Cell {
     this.density = Math.min(255, this.density);
   }
 
-  dissipation() {
+  dissipate() {
     if (this.density > this.neutralDensity) {
       this.density -= Math.random() * 0.01;
     } else if (this.density < this.neutralDensity) {
@@ -200,19 +202,23 @@ class GridRenderer {
     this.c = canvas.getContext('2d');
     this.cellRenderer = new CellRenderer(this.c);
   }
+  clear() {
+    const canvas = document.querySelector('canvas#main');
+    this.c.clearRect(0, 0, innerWidth, innerHeight);
+  }
 
-  render(grid) {
+  render() {
     const canvas = document.querySelector('canvas#main');
 
 
     this.c.clearRect(0, 0, innerWidth, innerHeight);
     this.c.fillStyle = 'rgb(45,55,70)';
-    this.c.fillRect(0, 0, grid.cellSize * grid.xCellsAmount, grid.cellSize * grid.yCellsAmount);
+    this.c.fillRect(0, 0, this.grid.cellSize * this.grid.xCellsAmount, this.grid.cellSize * this.grid.yCellsAmount);
 
     const cellRenderer = this.cellRenderer;
 
-    this.cellRenderer.cellSize = grid.cellSize;
-    grid.cells.forEach((cell) => {
+    this.cellRenderer.cellSize = this.grid.cellSize;
+    this.grid.cells.forEach((cell) => {
       this.cellRenderer.render(cell);
     });
   }
@@ -222,18 +228,23 @@ const canvas = document.querySelector('canvas#main');
 
 
 const cellSize = 15;
-
-canvas.width = Math.min(Math.floor((window.innerWidth - 20) / cellSize) * cellSize, cellSize * 80);
-canvas.height = Math.min(Math.floor((window.innerHeight - 20) / cellSize) * cellSize, cellSize * 40);
-
-const xCellsAmount = Math.floor(canvas.width / cellSize);
-const yCellsAmount = Math.floor(canvas.height / cellSize);
-
-const grid = new Grid(xCellsAmount, yCellsAmount, cellSize);
 const gridRenderer = new GridRenderer();
 
+function init(cellSize) {
+
+  canvas.width = Math.min(Math.floor((window.innerWidth - 20) / cellSize) * cellSize, cellSize * 90);
+  canvas.height = Math.min(Math.floor(580 / cellSize) * cellSize, cellSize * 40);
+
+  const xCellsAmount = Math.floor(canvas.width / cellSize);
+  const yCellsAmount = Math.floor(canvas.height / cellSize);
+
+  return  new Grid(xCellsAmount, yCellsAmount, cellSize);
+}
+
+gridRenderer.grid = init(cellSize);
+
 function animate() {
-  gridRenderer.render(grid);
+  gridRenderer.render();
   requestAnimationFrame(animate);
 }
 
@@ -245,9 +256,9 @@ window.addEventListener('mousemove', (e) => {
     const relativeX = e.x - rect.x;
     const relativeY = e.y - rect.y;
     const radius = Math.floor(diameter / 2);
-    for (let x = relativeX - (radius * grid.cellSize); x <= relativeX + (radius * grid.cellSize); x += grid.cellSize) {
-      for (let y = relativeY - (radius * grid.cellSize); y <= relativeY + (radius * grid.cellSize); y += grid.cellSize) {
-        let cell = grid.getCellForCoordinates(x, y);
+    for (let x = relativeX - (radius * gridRenderer.grid.cellSize); x <= relativeX + (radius * gridRenderer.grid.cellSize); x += gridRenderer.grid.cellSize) {
+      for (let y = relativeY - (radius * gridRenderer.grid.cellSize); y <= relativeY + (radius * gridRenderer.grid.cellSize); y += gridRenderer.grid.cellSize) {
+        let cell = gridRenderer.grid.getCellForCoordinates(x, y);
         if (cell) {
           cell.density = 255;
           cell.velocityVector.x = e.movementX * 2;
@@ -271,6 +282,11 @@ document.querySelector('input#vectors_enabled').addEventListener('change', (e) =
   } else {
     gridRenderer.cellRenderer.renderVectors = false;
   }
+});
+document.querySelector('input#cell_size').addEventListener('change', (e) => {
+  gridRenderer.grid = init(e.target.value);
+  gridRenderer.clear();
+  gridRenderer.render();
 });
 
 
