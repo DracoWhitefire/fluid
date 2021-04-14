@@ -122,6 +122,17 @@ class CellRenderer {
 
     this.c.fillStyle = 'rgb(' + cell.density + ',' + cell.density + ',' + cell.density + ')';
     this.c.fillRect(cell.x, cell.y, this.cellSize - this.trenchSize, this.cellSize - this.trenchSize);
+
+    const centerX = cell.x + (cell.grid.cellSize / 2);
+    const centerY = cell.y + (cell.grid.cellSize / 2);
+    this.c.fillStyle = 'red';
+    this.c.fillRect(centerX, centerY, 1, 1);
+    this.c.beginPath();
+    this.c.moveTo(centerX + cell.velocityVector.x, centerY + cell.velocityVector.y);
+    this.c.lineTo(centerX, centerY);
+
+    this.c.strokeStyle = 'red';
+    this.c.stroke();
   }
 }
 
@@ -171,7 +182,7 @@ function animate() {
 const diameter = 2;
 window.addEventListener('mousemove', (e) => {
   if (e.target == canvas) {
-    // console.log(e);
+    console.log(e);
     const rect = canvas.getBoundingClientRect();
     const relativeX = e.x - rect.x;
     const relativeY = e.y - rect.y;
@@ -181,6 +192,8 @@ window.addEventListener('mousemove', (e) => {
         let cell = grid.getCellForCoordinates(x, y);
         if (cell) {
           cell.density = 255;
+          cell.velocityVector.x = e.movementX;
+          cell.velocityVector.y = e.movementY;
           gridRenderer.cellRenderer.render(cell);
         }
       }
