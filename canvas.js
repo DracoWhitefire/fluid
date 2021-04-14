@@ -16,10 +16,13 @@ class Cell {
     this.diffuse();
     this.advect();
     this.randomChange();
+    this.dissipation();
   }
 
   diffuse() {
-    const velocity = Math.random()
+    const densityDiffusionVelocity = Math.random() / 2;
+    const velocityVectorDiffusionVelocity = Math.random();
+
     const topCell = this.grid.getCellForCoordinates(this.x, this.y - this.grid.cellSize);
     const bottomCell = this.grid.getCellForCoordinates(this.x, this.y + this.grid.cellSize);
     const leftCell = this.grid.getCellForCoordinates(this.x - this.grid.cellSize, this.y);
@@ -27,27 +30,52 @@ class Cell {
 
     let count = 1;
     let averageDensity = this.density;
+    const averageVelocityVector = {
+      x: this.velocityVector.x,
+      y: this.velocityVector.y,
+    };
 
     if (topCell) {
       count++;
       averageDensity += topCell.density;
+      averageVelocityVector.x += topCell.velocityVector.x;
+      averageVelocityVector.y += topCell.velocityVector.y;
     }
     if (bottomCell) {
       count++;
       averageDensity += bottomCell.density;
+      averageVelocityVector.x += bottomCell.velocityVector.x;
+      averageVelocityVector.y += bottomCell.velocityVector.y;
     }
     if (leftCell) {
       count++;
       averageDensity += leftCell.density;
+      averageVelocityVector.x += leftCell.velocityVector.x;
+      averageVelocityVector.y += leftCell.velocityVector.y;
     }
     if (rightCell) {
       count++;
       averageDensity += rightCell.density;
+      averageVelocityVector.x += rightCell.velocityVector.x;
+      averageVelocityVector.y += rightCell.velocityVector.y;
     }
 
     averageDensity = Math.round(averageDensity / count);
+    averageVelocityVector.x = Math.round(averageVelocityVector.x / count);
+    averageVelocityVector.y = Math.round(averageVelocityVector.y / count);
 
-    this.density += velocity * (averageDensity - this.density);
+    this.density += densityDiffusionVelocity * (averageDensity - this.density);
+    let foo = false;
+
+
+    this.velocityVector = {
+      x: this.velocityVector.x
+        + Math.round(velocityVectorDiffusionVelocity * (averageVelocityVector.x - this.velocityVector.x))
+      ,
+      y: this.velocityVector.y
+        + Math.round(velocityVectorDiffusionVelocity * (averageVelocityVector.y - this.velocityVector.y))
+      ,
+    }
   }
 
   advect() {
@@ -58,12 +86,34 @@ class Cell {
 
 
   randomChange() {
-    if (Math.random() > this.grid.randomness.chance) {
+    if (Math.random() < this.grid.randomness.chance) {
       return;
     }
     this.density += Math.round((Math.random() - 0.5) * this.grid.randomness.velocity);
     this.density = Math.max(0, this.density);
     this.density = Math.min(255, this.density);
+  }
+
+  dissipation() {
+    if (this.density > 128) {
+      this.density -= Math.random() * 0.01;
+    } else if (this.density < 128) {
+      this.density += Math.random() * 0.01;
+    }
+    if (Math.random() < this.grid.randomness.chance) {
+      return;
+    }
+
+    if (this.velocityVector.x > 0) {
+      this.velocityVector.x -= Math.random() * 0.01;
+    } else if (this.velocityVector.x < 0) {
+      this.velocityVector.x += Math.random() * 0.01;
+    }
+    if (this.velocityVector.y > 0) {
+      this.velocityVector.y -= Math.random() * 0.01;
+    } else if (this.velocityVector.y < 0) {
+      this.velocityVector.y += Math.random() * 0.01;
+    }
   }
 }
 
@@ -74,7 +124,7 @@ class Grid {
     this.cellSize = cellSize;
     this.randomness = {
       chance: 0.1,
-      velocity: 5,
+      velocity: 3,
     }
 
     this.cells = [];
@@ -182,7 +232,7 @@ function animate() {
 const diameter = 2;
 window.addEventListener('mousemove', (e) => {
   if (e.target == canvas) {
-    console.log(e);
+    // console.log(e);
     const rect = canvas.getBoundingClientRect();
     const relativeX = e.x - rect.x;
     const relativeY = e.y - rect.y;
@@ -192,18 +242,11 @@ window.addEventListener('mousemove', (e) => {
         let cell = grid.getCellForCoordinates(x, y);
         if (cell) {
           cell.density = 255;
-          cell.velocityVector.x = e.movementX;
-          cell.velocityVector.y = e.movementY;
+          cell.velocityVector.x = e.movementX * 2;
+          cell.velocityVector.y = e.movementY * 2;
           gridRenderer.cellRenderer.render(cell);
         }
       }
-    }
-    const cell = grid.getCellForCoordinates(relativeX, relativeY);
-    if (cell) {
-      cell.r = 255;
-      cell.g = 255;
-      cell.b = 255;
-      gridRenderer.cellRenderer.render(cell);
     }
   }
 });
