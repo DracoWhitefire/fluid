@@ -170,6 +170,7 @@ class CellRenderer {
   constructor(c) {
     this.c = c;
     this.trenchSize = 0;
+    this.renderVectors = false;
   }
 
   render(cell) {
@@ -178,16 +179,18 @@ class CellRenderer {
     this.c.fillStyle = 'rgb(' + cell.density + ',' + cell.density + ',' + cell.density + ')';
     this.c.fillRect(cell.x, cell.y, this.cellSize - this.trenchSize, this.cellSize - this.trenchSize);
 
-    const centerX = cell.x + (cell.grid.cellSize / 2);
-    const centerY = cell.y + (cell.grid.cellSize / 2);
-    this.c.fillStyle = 'red';
-    this.c.fillRect(centerX, centerY, 1, 1);
-    this.c.beginPath();
-    this.c.moveTo(centerX + cell.velocityVector.x, centerY + cell.velocityVector.y);
-    this.c.lineTo(centerX, centerY);
+    if (this.renderVectors) {
+      const centerX = cell.x + (cell.grid.cellSize / 2);
+      const centerY = cell.y + (cell.grid.cellSize / 2);
+      this.c.fillStyle = 'red';
+      this.c.fillRect(centerX, centerY, 1, 1);
+      this.c.beginPath();
+      this.c.moveTo(centerX + cell.velocityVector.x, centerY + cell.velocityVector.y);
+      this.c.lineTo(centerX, centerY);
+      this.c.strokeStyle = 'red';
+      this.c.stroke();
+    }
 
-    this.c.strokeStyle = 'red';
-    this.c.stroke();
   }
 }
 
@@ -261,8 +264,15 @@ document.querySelector('input#grid_enabled').addEventListener('change', (e) => {
   } else {
     gridRenderer.cellRenderer.trenchSize = 0;
   }
-
 });
+document.querySelector('input#vectors_enabled').addEventListener('change', (e) => {
+  if (e.target.checked) {
+    gridRenderer.cellRenderer.renderVectors = true;
+  } else {
+    gridRenderer.cellRenderer.renderVectors = false;
+  }
+});
+
 
 // gridRenderer.render(grid);
 animate();
