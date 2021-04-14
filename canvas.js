@@ -14,10 +14,8 @@ class Cell {
   }
 
   update() {
-    this.advect();
-    this.diffuse();
-    this.randomChange();
-    this.dissipate();
+    this.velocityVector = this.newVelocityVector;
+    this.density = this.newDensity;
   }
 
   diffuse() {
@@ -65,11 +63,9 @@ class Cell {
     averageVelocityVector.x = Math.round(averageVelocityVector.x / count);
     averageVelocityVector.y = Math.round(averageVelocityVector.y / count);
 
-    this.density += densityDiffusionVelocity * (averageDensity - this.density);
-    let foo = false;
+    this.newDensity = this.density + (densityDiffusionVelocity * (averageDensity - this.density));
 
-
-    this.velocityVector = {
+    this.newVelocityVector = {
       x: this.velocityVector.x
         + Math.round(velocityVectorDiffusionVelocity * (averageVelocityVector.x - this.velocityVector.x))
       ,
@@ -80,13 +76,17 @@ class Cell {
   }
 
   advect() {
+    this.newVelocityVector = {
+      x: this.velocityVector.x,
+      y: this.velocityVector.y,
+    };
     const targetX = this.x - this.velocityVector.x;
     const targetY = this.y - this.velocityVector.y;
     const targetCell = this.grid.getCellForCoordinates(targetX, targetY);
     if (targetCell) {
-      this.density = (this.density + targetCell.density) / 2;
-      this.velocityVector.x = (targetCell.velocityVector.x + this.velocityVector.x) / 2;
-      this.velocityVector.y = (targetCell.velocityVector.y + this.velocityVector.y) / 2;
+      this.newDensity = (this.density + targetCell.density) / 2;
+      this.newVelocityVector.x = (targetCell.velocityVector.x + this.velocityVector.x) / 2;
+      this.newVelocityVector.y = (targetCell.velocityVector.y + this.velocityVector.y) / 2;
     }
 
   }
@@ -102,24 +102,25 @@ class Cell {
   }
 
   dissipate() {
+    let dissipationFactor = 0.1;
     if (this.density > this.neutralDensity) {
-      this.density -= Math.random() * 0.01;
+      this.density -= Math.random() * dissipationFactor;
     } else if (this.density < this.neutralDensity) {
-      this.density += Math.random() * 0.01;
+      this.density += Math.random() * dissipationFactor;
     }
     if (Math.random() < this.grid.randomness.chance) {
       return;
     }
 
     if (this.velocityVector.x > 0) {
-      this.velocityVector.x -= Math.random() * 0.01;
+      this.velocityVector.x -= Math.random() * dissipationFactor;
     } else if (this.velocityVector.x < 0) {
-      this.velocityVector.x += Math.random() * 0.01;
+      this.velocityVector.x += Math.random() * dissipationFactor;
     }
     if (this.velocityVector.y > 0) {
-      this.velocityVector.y -= Math.random() * 0.01;
+      this.velocityVector.y -= Math.random() * dissipationFactor;
     } else if (this.velocityVector.y < 0) {
-      this.velocityVector.y += Math.random() * 0.01;
+      this.velocityVector.y += Math.random() * dissipationFactor;
     }
   }
 }
@@ -176,8 +177,6 @@ class CellRenderer {
   }
 
   render(cell) {
-    cell.update();
-
     this.c.fillStyle = 'rgb(' + cell.density + ',' + cell.density + ',' + cell.density + ')';
     this.c.fillRect(cell.x, cell.y, this.cellSize - this.trenchSize, this.cellSize - this.trenchSize);
 
@@ -218,6 +217,25 @@ class GridRenderer {
     const cellRenderer = this.cellRenderer;
 
     this.cellRenderer.cellSize = this.grid.cellSize;
+    this.grid.cells.forEach((cell) => {
+      cell.advect();
+    });
+    this.grid.cells.forEach((cell) => {
+      cell.update();
+    });
+    this.grid.cells.forEach((cell) => {
+      cell.diffuse();
+    });
+    this.grid.cells.forEach((cell) => {
+      cell.update();
+    });
+    this.grid.cells.forEach((cell) => {
+      cell.randomChange();
+    });
+    this.grid.cells.forEach((cell) => {
+      cell.dissipate();
+    });
+
     this.grid.cells.forEach((cell) => {
       this.cellRenderer.render(cell);
     });
@@ -289,6 +307,4 @@ document.querySelector('input#cell_size').addEventListener('change', (e) => {
   gridRenderer.render();
 });
 
-
-// gridRenderer.render(grid);
 animate();

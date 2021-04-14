@@ -10,12 +10,17 @@
             background: black;
             color: white;
         }
+
         div#container {
             height: 600px;
         }
+
         canvas#main {
             border: 1px solid white;
             margin: 10px;
+        }
+        form {
+            margin: 20px;
         }
     </style>
 </head>
@@ -25,12 +30,18 @@
 </div>
 
 <form>
-    <label for="grid_enabled">Grid</label>
-    <input type="checkbox" id="grid_enabled"/>
-    <label for="vectors_enabled">Vectors</label>
-    <input type="checkbox" id="vectors_enabled"/>
-    <label for="cell_size">Cell Size</label>
-    <input type="number" id="cell_size" value="15"/>
+    <p>
+        <label for="grid_enabled">Grid</label>
+        <input type="checkbox" id="grid_enabled" />
+    </p>
+    <p>
+        <label for="vectors_enabled">Vectors</label>
+        <input type="checkbox" id="vectors_enabled" />
+    </p>
+    <p>
+        <label for="cell_size">Cell Size</label>
+        <input type="number" id="cell_size" value="15" />
+    </p>
 </form>
 <script src="canvas.js"></script>
 </body>
