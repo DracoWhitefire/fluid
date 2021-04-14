@@ -14,8 +14,8 @@ class Cell {
   }
 
   update() {
-    this.diffuse();
     this.advect();
+    this.diffuse();
     this.randomChange();
     this.dissipation();
   }
@@ -83,6 +83,10 @@ class Cell {
     const targetX = this.x - this.velocityVector.x;
     const targetY = this.y - this.velocityVector.y;
     const targetCell = this.grid.getCellForCoordinates(targetX, targetY);
+    if (targetCell) {
+      this.density = (this.density + targetCell.density) / 2;
+    }
+
   }
 
 
