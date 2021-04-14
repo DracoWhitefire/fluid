@@ -18,14 +18,30 @@ class Cell {
     this.density = this.newDensity;
   }
 
+  getTopCell() {
+    return this.grid.getCellForCoordinates(this.x, this.y - this.grid.cellSize);
+  }
+
+  getBottomCell() {
+    return this.grid.getCellForCoordinates(this.x, this.y + this.grid.cellSize);
+  }
+
+  getLeftCell() {
+    return this.grid.getCellForCoordinates(this.x - this.grid.cellSize, this.y);
+  }
+
+  getRightCell() {
+    return this.grid.getCellForCoordinates(this.x + this.grid.cellSize, this.y);
+  }
+
   diffuse() {
     const densityDiffusionVelocity = Math.random() / 2;
     const velocityVectorDiffusionVelocity = Math.random();
 
-    const topCell = this.grid.getCellForCoordinates(this.x, this.y - this.grid.cellSize);
-    const bottomCell = this.grid.getCellForCoordinates(this.x, this.y + this.grid.cellSize);
-    const leftCell = this.grid.getCellForCoordinates(this.x - this.grid.cellSize, this.y);
-    const rightCell = this.grid.getCellForCoordinates(this.x + this.grid.cellSize, this.y);
+    const topCell = this.getTopCell();
+    const bottomCell = this.getBottomCell();
+    const leftCell = this.getLeftCell();
+    const rightCell = this.getRightCell();
 
     let count = 1;
     let averageDensity = this.density;
@@ -201,6 +217,7 @@ class GridRenderer {
     this.c = canvas.getContext('2d');
     this.cellRenderer = new CellRenderer(this.c);
   }
+
   clear() {
     const canvas = document.querySelector('canvas#main');
     this.c.clearRect(0, 0, innerWidth, innerHeight);
@@ -236,6 +253,36 @@ class GridRenderer {
       cell.dissipate();
     });
 
+    const curlGrid = new Grid(this.grid.xCellsAmount, this.grid.yCellsAmount, this.grid.cellSize);
+
+    this.grid.cells.forEach((cell) => {
+      const curlVectorX = {
+        x: (cell.getTopCell() ? cell.getTopCell().velocityVector.x : 0)
+          - (cell.getBottomCell() ? cell.getBottomCell().velocityVector.x : 0),
+        y: (cell.getTopCell() ? cell.getTopCell().velocityVector.y : 0)
+          - (cell.getBottomCell() ? cell.getBottomCell().velocityVector.y : 0),
+      };
+
+
+      const curlVectorY = {
+        x: (cell.getLeftCell() ? cell.getLeftCell().velocityVector.x : 0)
+          - (cell.getRightCell() ? cell.getRightCell().velocityVector.x : 0),
+        y: (cell.getLeftCell() ? cell.getLeftCell().velocityVector.y : 0)
+          - (cell.getRightCell() ? cell.getRightCell().velocityVector.y : 0),
+      };
+
+      curlGrid.getCellForCoordinates(cell.x, cell.y).velocityVector = {
+        x: (curlVectorX.x + curlVectorY.x) / 2,
+        y: (curlVectorX.y + curlVectorY.y) / 2,
+      };
+    })
+    this.grid.cells.forEach((cell) => {
+      let curlCell = curlGrid.getCellForCoordinates(cell.x, cell.y);
+      // cell.velocityVector.x -= curlCell.velocityVector.x;
+      // cell.velocityVector.y -= curlCell.velocityVector.y;
+    })
+
+
     this.grid.cells.forEach((cell) => {
       this.cellRenderer.render(cell);
     });
@@ -256,7 +303,7 @@ function init(cellSize) {
   const xCellsAmount = Math.floor(canvas.width / cellSize);
   const yCellsAmount = Math.floor(canvas.height / cellSize);
 
-  return  new Grid(xCellsAmount, yCellsAmount, cellSize);
+  return new Grid(xCellsAmount, yCellsAmount, cellSize);
 }
 
 gridRenderer.grid = init(cellSize);
