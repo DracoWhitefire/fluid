@@ -2,12 +2,17 @@ class Cell {
   constructor(x, y) {
     this.x = x;
     this.y = y;
-    this.r = 200;
-    this.g = 200;
-    this.b = 200;
+    this.r = 25;
+    this.g = 35;
+    this.b = 50;
+
   }
 
   update() {
+    this.randomChange();
+  }
+
+  randomChange() {
     const velocity = 32;
     this.r += Math.round((Math.random() - 0.5) * velocity);
     this.r = Math.max(0, this.r);
@@ -28,11 +33,36 @@ class Grid {
     this.cellSize = cellSize;
 
     this.cells = [];
+    this.index = {};
+
     for (let i = 0; i < this.xCellsAmount; i++) {
       for (let j = 0; j < this.yCellsAmount; j++) {
-        this.cells.push(new Cell(i * this.cellSize, j * this.cellSize));
+        let x = i * this.cellSize;
+        let y = j * this.cellSize;
+        let cell = new Cell(x, y);
+        this.cells.push(cell);
+        if (x in this.index === false) {
+          this.index[x] = {};
+        }
+        this.index[x][y] = cell;
       }
     }
+  }
+
+  getCellForCoordinates(x, y) {
+    const coords = this.getCellCoordinates(x, y);
+    if (coords.x in this.index !== false) {
+      if (coords.y in this.index[coords.x] !== false) {
+        return this.index[coords.x][coords.y];
+      }
+    }
+  }
+
+  getCellCoordinates(x, y) {
+    return {
+      x: Math.floor(x / this.cellSize) * this.cellSize,
+      y: Math.floor(y / this.cellSize) * this.cellSize,
+    };
   }
 }
 
@@ -57,31 +87,42 @@ class GridRenderer {
 
   render(grid) {
     const canvas = document.querySelector('canvas#main');
+
+
+    this.c.clearRect(0, 0, innerWidth, innerHeight);
+    this.c.fillStyle = 'rgb(45,55,70)';
+    this.c.fillRect(0, 0, grid.cellSize * grid.xCellsAmount, grid.cellSize * grid.yCellsAmount);
+
     const cellRenderer = this.cellRenderer;
+    const diameter = 1;
     window.addEventListener('mousemove', (e) => {
       if (e.target == canvas) {
         const rect = canvas.getBoundingClientRect();
         const relativeX = e.x - rect.x;
         const relativeY = e.y - rect.y;
-        const cells = grid.cells.filter((cell) => {
-          // return cell.x == Math.floor(relativeX / grid.cellSize) * grid.cellSize
-          //   && cell.y == Math.floor(relativeY / grid.cellSize) * grid.cellSize;
-          return cell.x - relativeX < 5 && cell.x - relativeX > -5
-          && cell.y - relativeY < 5 && cell.y - relativeY > -5;
-        });
-        if (cells.length) {
-          cells.forEach(function (cell) {
-            cell.r = 255;
-            cell.g = 255;
-            cell.b = 255;
-            cellRenderer.render(cell);
-          })
-
+        const radius = Math.floor(diameter/2);
+        for (let x = relativeX - (radius * grid.cellSize); x <= relativeX + (radius * grid.cellSize); x += grid.cellSize) {
+          for (let y = relativeY - (radius * grid.cellSize); y <= relativeY + (radius * grid.cellSize); y += grid.cellSize) {
+            let cell = grid.getCellForCoordinates(x, y);
+            if (cell) {
+              cell.r = 255;
+              cell.g = 255;
+              cell.b = 255;
+              cellRenderer.render(cell);
+            }
+          }
         }
+        const cell = grid.getCellForCoordinates(relativeX, relativeY);
+        if (cell) {
+          cell.r = 255;
+          cell.g = 255;
+          cell.b = 255;
+          cellRenderer.render(cell);
+        }
+
       }
     });
 
-    this.c.clearRect(0, 0, innerWidth, innerHeight);
     this.cellRenderer.cellSize = grid.cellSize;
     grid.cells.forEach((cell) => {
       this.cellRenderer.render(cell);
@@ -107,8 +148,6 @@ function animate() {
   gridRenderer.render(grid);
   requestAnimationFrame(animate);
 }
-
-
 
 
 gridRenderer.render(grid);
