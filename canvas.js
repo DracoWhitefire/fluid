@@ -7,11 +7,47 @@ class Cell {
   }
 
   update() {
+    this.diffuse();
     this.randomChange();
   }
 
+  diffuse() {
+    const velocity = Math.random()
+    const topCell = this.grid.getCellForCoordinates(this.x, this.y - this.grid.cellSize);
+    const bottomCell = this.grid.getCellForCoordinates(this.x, this.y + this.grid.cellSize);
+    const leftCell = this.grid.getCellForCoordinates(this.x - this.grid.cellSize, this.y);
+    const rightCell = this.grid.getCellForCoordinates(this.x + this.grid.cellSize, this.y);
+
+    let count = 1;
+    let averageDensity = this.density;
+
+    if (topCell) {
+      count++;
+      averageDensity += topCell.density;
+    }
+    if (bottomCell) {
+      count++;
+      averageDensity += bottomCell.density;
+    }
+    if (leftCell) {
+      count++;
+      averageDensity += leftCell.density;
+    }
+    if (rightCell) {
+      count++;
+      averageDensity += rightCell.density;
+    }
+
+    averageDensity = Math.round(averageDensity / count);
+
+    this.density += velocity * (averageDensity - this.density);
+  }
+
   randomChange() {
-    const velocity = 2;
+    const velocity = 16;
+    if (Math.random() < 0.9) {
+      return;
+    }
     this.density += Math.round((Math.random() - 0.5) * velocity);
     this.density = Math.max(0, this.density);
     this.density = Math.min(255, this.density);
@@ -87,7 +123,7 @@ class GridRenderer {
     this.c.fillRect(0, 0, grid.cellSize * grid.xCellsAmount, grid.cellSize * grid.yCellsAmount);
 
     const cellRenderer = this.cellRenderer;
-    const diameter = 3;
+    const diameter = 2;
     window.addEventListener('mousemove', (e) => {
       if (e.target == canvas) {
         const rect = canvas.getBoundingClientRect();
