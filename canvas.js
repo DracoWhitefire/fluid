@@ -1,11 +1,9 @@
 class Cell {
-  constructor(x, y) {
+  constructor(grid, x, y) {
+    this.grid = grid;
     this.x = x;
     this.y = y;
-    this.r = 25;
-    this.g = 35;
-    this.b = 50;
-
+    this.density = 128;
   }
 
   update() {
@@ -13,16 +11,10 @@ class Cell {
   }
 
   randomChange() {
-    const velocity = 32;
-    this.r += Math.round((Math.random() - 0.5) * velocity);
-    this.r = Math.max(0, this.r);
-    this.r = Math.min(255, this.r);
-    this.g += Math.round((Math.random() - 0.5) * velocity);
-    this.g = Math.max(0, this.g);
-    this.g = Math.min(255, this.g);
-    this.b += Math.round((Math.random() - 0.5) * velocity);
-    this.b = Math.max(0, this.g);
-    this.b = Math.min(255, this.g);
+    const velocity = 2;
+    this.density += Math.round((Math.random() - 0.5) * velocity);
+    this.density = Math.max(0, this.density);
+    this.density = Math.min(255, this.density);
   }
 }
 
@@ -39,7 +31,7 @@ class Grid {
       for (let j = 0; j < this.yCellsAmount; j++) {
         let x = i * this.cellSize;
         let y = j * this.cellSize;
-        let cell = new Cell(x, y);
+        let cell = new Cell(this, x, y);
         this.cells.push(cell);
         if (x in this.index === false) {
           this.index[x] = {};
@@ -73,7 +65,8 @@ class CellRenderer {
 
   render(cell) {
     cell.update();
-    this.c.fillStyle = 'rgb(' + cell.r + ',' + cell.g + ',' + cell.b + ')';
+
+    this.c.fillStyle = 'rgb(' + cell.density + ',' + cell.density + ',' + cell.density + ')';
     this.c.fillRect(cell.x, cell.y, this.cellSize - 1, this.cellSize - 1);
   }
 }
@@ -94,7 +87,7 @@ class GridRenderer {
     this.c.fillRect(0, 0, grid.cellSize * grid.xCellsAmount, grid.cellSize * grid.yCellsAmount);
 
     const cellRenderer = this.cellRenderer;
-    const diameter = 1;
+    const diameter = 3;
     window.addEventListener('mousemove', (e) => {
       if (e.target == canvas) {
         const rect = canvas.getBoundingClientRect();
@@ -105,9 +98,7 @@ class GridRenderer {
           for (let y = relativeY - (radius * grid.cellSize); y <= relativeY + (radius * grid.cellSize); y += grid.cellSize) {
             let cell = grid.getCellForCoordinates(x, y);
             if (cell) {
-              cell.r = 255;
-              cell.g = 255;
-              cell.b = 255;
+              cell.density = 255;
               cellRenderer.render(cell);
             }
           }
@@ -150,5 +141,5 @@ function animate() {
 }
 
 
-gridRenderer.render(grid);
-// animate();
+// gridRenderer.render(grid);
+animate();
