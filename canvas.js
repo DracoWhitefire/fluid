@@ -44,11 +44,10 @@ class Cell {
   }
 
   randomChange() {
-    const velocity = 16;
-    if (Math.random() < 0.9) {
+    if (Math.random() > this.grid.randomness.chance) {
       return;
     }
-    this.density += Math.round((Math.random() - 0.5) * velocity);
+    this.density += Math.round((Math.random() - 0.5) * this.grid.randomness.velocity);
     this.density = Math.max(0, this.density);
     this.density = Math.min(255, this.density);
   }
@@ -59,6 +58,10 @@ class Grid {
     this.xCellsAmount = xCellsAmount;
     this.yCellsAmount = yCellsAmount;
     this.cellSize = cellSize;
+    this.randomness = {
+      chance: 0.1,
+      velocity: 5,
+    }
 
     this.cells = [];
     this.index = {};
@@ -97,13 +100,14 @@ class Grid {
 class CellRenderer {
   constructor(c) {
     this.c = c;
+    this.trenchSize = 0;
   }
 
   render(cell) {
     cell.update();
 
     this.c.fillStyle = 'rgb(' + cell.density + ',' + cell.density + ',' + cell.density + ')';
-    this.c.fillRect(cell.x, cell.y, this.cellSize - 1, this.cellSize - 1);
+    this.c.fillRect(cell.x, cell.y, this.cellSize - this.trenchSize, this.cellSize - this.trenchSize);
   }
 }
 
@@ -123,32 +127,6 @@ class GridRenderer {
     this.c.fillRect(0, 0, grid.cellSize * grid.xCellsAmount, grid.cellSize * grid.yCellsAmount);
 
     const cellRenderer = this.cellRenderer;
-    const diameter = 2;
-    window.addEventListener('mousemove', (e) => {
-      if (e.target == canvas) {
-        const rect = canvas.getBoundingClientRect();
-        const relativeX = e.x - rect.x;
-        const relativeY = e.y - rect.y;
-        const radius = Math.floor(diameter/2);
-        for (let x = relativeX - (radius * grid.cellSize); x <= relativeX + (radius * grid.cellSize); x += grid.cellSize) {
-          for (let y = relativeY - (radius * grid.cellSize); y <= relativeY + (radius * grid.cellSize); y += grid.cellSize) {
-            let cell = grid.getCellForCoordinates(x, y);
-            if (cell) {
-              cell.density = 255;
-              cellRenderer.render(cell);
-            }
-          }
-        }
-        const cell = grid.getCellForCoordinates(relativeX, relativeY);
-        if (cell) {
-          cell.r = 255;
-          cell.g = 255;
-          cell.b = 255;
-          cellRenderer.render(cell);
-        }
-
-      }
-    });
 
     this.cellRenderer.cellSize = grid.cellSize;
     grid.cells.forEach((cell) => {
@@ -175,7 +153,39 @@ function animate() {
   gridRenderer.render(grid);
   requestAnimationFrame(animate);
 }
+const diameter = 2;
+window.addEventListener('mousemove', (e) => {
+  if (e.target == canvas) {
+    const rect = canvas.getBoundingClientRect();
+    const relativeX = e.x - rect.x;
+    const relativeY = e.y - rect.y;
+    const radius = Math.floor(diameter/2);
+    for (let x = relativeX - (radius * grid.cellSize); x <= relativeX + (radius * grid.cellSize); x += grid.cellSize) {
+      for (let y = relativeY - (radius * grid.cellSize); y <= relativeY + (radius * grid.cellSize); y += grid.cellSize) {
+        let cell = grid.getCellForCoordinates(x, y);
+        if (cell) {
+          cell.density = 255;
+          gridRenderer.cellRenderer.render(cell);
+        }
+      }
+    }
+    const cell = grid.getCellForCoordinates(relativeX, relativeY);
+    if (cell) {
+      cell.r = 255;
+      cell.g = 255;
+      cell.b = 255;
+      gridRenderer.cellRenderer.render(cell);
+    }
+  }
+});
+document.querySelector('input#grid_enabled').addEventListener('change', (e) => {
+  if (e.target.checked) {
+    gridRenderer.cellRenderer.trenchSize = 1;
+  } else {
+    gridRenderer.cellRenderer.trenchSize = 0;
+  }
 
+});
 
 // gridRenderer.render(grid);
 animate();
