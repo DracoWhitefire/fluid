@@ -8,8 +8,9 @@ class Cell {
       x: 0,
       y: 0,
     };
+    this.neutralDensity = 64;
 
-    this.density = 128;
+    this.density = this.neutralDensity;
   }
 
   update() {
@@ -95,9 +96,9 @@ class Cell {
   }
 
   dissipation() {
-    if (this.density > 128) {
+    if (this.density > this.neutralDensity) {
       this.density -= Math.random() * 0.01;
-    } else if (this.density < 128) {
+    } else if (this.density < this.neutralDensity) {
       this.density += Math.random() * 0.01;
     }
     if (Math.random() < this.grid.randomness.chance) {
